@@ -1,0 +1,16 @@
+// Variables
+$font-family: 'Arial, sans-serif';
+$text-color: #333;
+$primary-color: #007bff;
+$secondary-color: #6c757d;
+
+// Global Styles
+body {
+  font-family: $font-family;
+  color: $text-color;
+}
+
+// Utility Classes
+.margin-top-20 {
+  margin-top: 20px;
+}

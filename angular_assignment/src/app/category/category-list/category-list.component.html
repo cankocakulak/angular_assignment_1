@@ -1,0 +1,19 @@
+<div class="container mt-3">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Category Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let category of categories$ | async">
+          <td>{{ category.name }}</td>
+          <td>
+            <button class="btn btn-danger" (click)="removeCategory(category.id)">Remove</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  

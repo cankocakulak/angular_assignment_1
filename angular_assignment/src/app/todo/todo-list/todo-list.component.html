@@ -1,0 +1,33 @@
+<div class="container mt-3">
+  <form [formGroup]="filterForm" class="mb-3">
+    <div class="form-group">
+      <label for="categoryFilter">Category</label>
+      <select id="categoryFilter" class="form-control" formControlName="category">
+        <option value="">All Categories</option>
+        <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+      </select>
+    </div>
+    <div class="form-group mt-2">
+      <label for="searchFilter">Search</label>
+      <input id="searchFilter" type="text" class="form-control" formControlName="search" placeholder="Search Todos">
+    </div>
+  </form>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let todo of todos$ | async">
+        <td>{{ todo.title }}</td>
+        <td>{{ getCategoryName(todo.categoryId) }}</td>
+        <td>
+          <button class="btn btn-danger" (click)="removeTodo(todo.id)">Remove</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
