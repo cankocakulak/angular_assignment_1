@@ -33,11 +33,10 @@ export class CategoryService {
     const categories = this.getCategoriesFromLocalStorage();
     return categories.some(category => category.name.toLowerCase() === name.toLowerCase());
   }
-
-  // Diğer CRUD işlemleri de burada tanımlanabilir
 }
 
 export interface Category {
   id: number;
   name: string;
 }
+

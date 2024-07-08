@@ -32,10 +32,12 @@ export class TodoFormComponent implements OnInit {
       const newTodo = {
         id: Date.now(),
         title: this.todoForm.value.title,
-        categoryId: this.todoForm.value.categoryId
+        categoryId: Number(this.todoForm.value.categoryId) // Number'a dönüştürme
       };
+      console.log('Adding ToDo:', newTodo); // Debugging için ekleyin
       this.todoService.addTodoItem(newTodo);
       this.todoForm.reset();
     }
   }
 }
+

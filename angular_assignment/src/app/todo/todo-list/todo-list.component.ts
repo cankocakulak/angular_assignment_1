@@ -48,6 +48,7 @@ export class TodoListComponent implements OnInit {
 
   getCategoryName(categoryId: number): string {
     const category = this.categories.find(cat => cat.id === categoryId);
+    console.log('Category ID:', categoryId, 'Category:', category); // Debugging için ekleyin
     return category ? category.name : 'Unknown';
   }
 
