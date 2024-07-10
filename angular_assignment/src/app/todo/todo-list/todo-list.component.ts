@@ -15,6 +15,7 @@ export class TodoListComponent implements OnInit {
   categories: Category[] = [];
   filterForm: FormGroup;
   todosForm: FormGroup;
+  removedTodos: number[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -73,16 +74,22 @@ export class TodoListComponent implements OnInit {
   }
 
   removeTodoItem(index: number): void {
+    const todoId = this.todos.at(index).value.id;
     this.todos.removeAt(index);
+    this.todosForm.markAsDirty(); // Mark form as dirty when an item is removed
+    this.removedTodos.push(todoId); // Track removed todos locally
   }
 
   saveChanges(): void {
     if (this.todosForm.valid) {
       const updatedTodos: Todo[] = this.todosForm.value.todos;
-      updatedTodos.forEach((todo: Todo) => {
-        this.todoService.updateTodoItem(todo);
-      });
+      
+      // Filter out the removed todos from the updated list
+      const finalTodos = updatedTodos.filter(todo => !this.removedTodos.includes(todo.id));
+      
+      this.todoService.updateTodos(finalTodos);
       this.todosForm.markAsPristine(); // Mark form as pristine after save
+      this.removedTodos = []; // Clear the list of removed todos after saving
     }
   }
 }

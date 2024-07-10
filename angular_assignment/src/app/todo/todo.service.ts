@@ -34,6 +34,11 @@ export class TodoService {
     this.saveTodosToLocalStorage(todos);
     this.todosSubject.next(todos);
   }
+
+  updateTodos(updatedTodos: Todo[]): void {
+    this.saveTodosToLocalStorage(updatedTodos);
+    this.todosSubject.next(updatedTodos);
+  }
 }
 
 export interface Todo {
