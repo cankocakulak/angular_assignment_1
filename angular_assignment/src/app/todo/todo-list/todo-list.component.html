@@ -12,22 +12,31 @@
       <input id="searchFilter" type="text" class="form-control" formControlName="search" placeholder="Search Todos">
     </div>
   </form>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Category</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let todo of todos$ | async">
-        <td>{{ todo.title }}</td>
-        <td>{{ getCategoryName(todo.categoryId) }}</td>
-        <td>
-          <button class="btn btn-danger" (click)="removeTodo(todo.id)">Remove</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <form [formGroup]="todosForm" (ngSubmit)="saveChanges()">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody formArrayName="todos">
+        <tr *ngFor="let todoControl of todos.controls; let i = index" [formGroupName]="i">
+          <td>
+            <input type="text" class="form-control" formControlName="title">
+          </td>
+          <td>
+            <select class="form-control" formControlName="categoryId">
+              <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+            </select>
+          </td>
+          <td>
+            <button type="button" class="btn btn-danger" (click)="removeTodoItem(i)">Remove</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <button type="submit" class="btn btn-primary" [disabled]="!todosForm.dirty">Save Changes</button>
+  </form>
 </div>

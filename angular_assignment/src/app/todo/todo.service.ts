@@ -28,6 +28,12 @@ export class TodoService {
     this.saveTodosToLocalStorage(todos);
     this.todosSubject.next(todos);
   }
+
+  updateTodoItem(updatedTodo: Todo): void {
+    const todos = this.getTodosFromLocalStorage().map(todo => todo.id === updatedTodo.id ? updatedTodo : todo);
+    this.saveTodosToLocalStorage(todos);
+    this.todosSubject.next(todos);
+  }
 }
 
 export interface Todo {

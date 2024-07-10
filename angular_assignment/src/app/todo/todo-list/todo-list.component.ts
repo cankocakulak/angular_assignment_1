@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray } from '@angular/forms';
 import { TodoService, Todo } from '../todo.service';
 import { CategoryService, Category } from '../../category/category.service';
 import { combineLatest, Observable, of } from 'rxjs';
@@ -14,6 +14,7 @@ export class TodoListComponent implements OnInit {
   todos$: Observable<Todo[]> = of([]); // Başlatma
   categories: Category[] = [];
   filterForm: FormGroup;
+  todosForm: FormGroup;
 
   constructor(
     private fb: FormBuilder,
@@ -23,6 +24,10 @@ export class TodoListComponent implements OnInit {
     this.filterForm = this.fb.group({
       category: [''],
       search: ['']
+    });
+
+    this.todosForm = this.fb.group({
+      todos: this.fb.array([])
     });
   }
 
@@ -44,15 +49,40 @@ export class TodoListComponent implements OnInit {
         });
       })
     );
+
+    this.todos$.subscribe(todos => this.setTodos(todos));
+  }
+
+  get todos(): FormArray {
+    return this.todosForm.get('todos') as FormArray;
+  }
+
+  setTodos(todos: Todo[]): void {
+    const todoFGs = todos.map(todo => this.fb.group({
+      id: [todo.id],
+      title: [todo.title],
+      categoryId: [todo.categoryId]
+    }));
+    const todoFormArray = this.fb.array(todoFGs);
+    this.todosForm.setControl('todos', todoFormArray);
   }
 
   getCategoryName(categoryId: number): string {
     const category = this.categories.find(cat => cat.id === categoryId);
-    //console.log('Category ID:', categoryId, 'Category:', category); // Debugging için ekleyin
     return category ? category.name : 'Unknown';
   }
 
-  removeTodo(todoId: number): void {
-    this.todoService.removeTodoItem(todoId);
+  removeTodoItem(index: number): void {
+    this.todos.removeAt(index);
+  }
+
+  saveChanges(): void {
+    if (this.todosForm.valid) {
+      const updatedTodos: Todo[] = this.todosForm.value.todos;
+      updatedTodos.forEach((todo: Todo) => {
+        this.todoService.updateTodoItem(todo);
+      });
+      this.todosForm.markAsPristine(); // Mark form as pristine after save
+    }
   }
 }
