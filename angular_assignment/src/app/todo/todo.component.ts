@@ -1,6 +1,6 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Todo, TodoService } from './todo.service';
-import { Subject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { debounceTime, map, takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -8,31 +8,54 @@ import { debounceTime, map, takeUntil } from 'rxjs/operators';
   templateUrl: './todo.component.html',
   styleUrls: ['./todo.component.scss']
 })
-export class TodoComponent implements OnDestroy {
+export class TodoComponent implements OnInit, OnDestroy {
   filteredTodos: Todo[] = [];
-  private filterSubject = new Subject<{ category: string, search: string }>();
+  private filterSubject = new BehaviorSubject<{ category: string, search: string }>({ category: '', search: '' });
   private destroy$ = new Subject<void>();
+  private todos: Todo[] = [];
+  private categoryMap: Map<number, Todo[]> = new Map();
 
-  constructor(private todoService: TodoService) {
+  constructor(private todoService: TodoService) {}
+
+  ngOnInit(): void {
+    this.todoService.todos$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(todos => {
+      this.todos = todos;
+      this.initializeCategoryMap();
+      this.applyFilter(this.filterSubject.getValue());
+    });
+
     this.filterSubject.pipe(
       debounceTime(300),
-      map(filter => {
-        const searchLower = filter.search.toLowerCase();
-        return (todos: Todo[]) => todos.filter(todo => {
-          const matchesCategory = filter.category ? todo.categoryId === +filter.category : true;
-          const matchesSearch = searchLower ? todo.title.toLowerCase().includes(searchLower) : true;
-          return matchesCategory && matchesSearch;
-        });
-      }),
       takeUntil(this.destroy$)
-    ).subscribe(filterFn => {
-      this.todoService.todos$.pipe(
-        map(todos => filterFn(todos))
-      ).subscribe(filteredTodos => {
-        this.filteredTodos = filteredTodos;
-        console.log('Filtered todos:', this.filteredTodos);
-      });
+    ).subscribe(filter => {
+      this.applyFilter(filter);
     });
+  }
+
+  initializeCategoryMap(): void {
+    this.categoryMap.clear();
+    for (const todo of this.todos) {
+      if (!this.categoryMap.has(todo.categoryId)) {
+        this.categoryMap.set(todo.categoryId, []);
+      }
+      this.categoryMap.get(todo.categoryId)?.push(todo);
+    }
+  }
+
+  applyFilter(filter: { category: string, search: string }): void {
+    let filteredTodos = this.todos;
+    if (filter.category) {
+      const categoryId = +filter.category;
+      filteredTodos = this.categoryMap.get(categoryId) || [];
+    }
+    if (filter.search) {
+      const searchLower = filter.search.toLowerCase();
+      filteredTodos = filteredTodos.filter(todo => todo.title.toLowerCase().includes(searchLower));
+    }
+    this.filteredTodos = filteredTodos;
+    console.log('Filtered todos:', this.filteredTodos);
   }
 
   onFilterChange(filter: { category: string, search: string }) {
