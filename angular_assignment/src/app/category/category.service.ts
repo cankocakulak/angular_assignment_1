@@ -5,33 +5,42 @@ import { BehaviorSubject, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class CategoryService {
-  private categoriesSubject = new BehaviorSubject<Category[]>(this.getCategoriesFromLocalStorage());
+  private categoriesMap = new Map<number, Category>();
+  private categoriesSubject = new BehaviorSubject<Category[]>([]);
   categories$: Observable<Category[]> = this.categoriesSubject.asObservable();
 
-  private getCategoriesFromLocalStorage(): Category[] {
-    return JSON.parse(localStorage.getItem('categories') || '[]');
+  constructor() {
+    this.loadCategoriesFromLocalStorage();
   }
 
-  private saveCategoriesToLocalStorage(categories: Category[]): void {
-    localStorage.setItem('categories', JSON.stringify(categories));
+  private loadCategoriesFromLocalStorage() {
+    const categories = JSON.parse(localStorage.getItem('categories') || '[]');
+    categories.forEach((category: Category) => this.categoriesMap.set(category.id, category));
+    this.categoriesSubject.next(Array.from(this.categoriesMap.values()));
   }
 
-  addCategory(category: Category): void {
-    const categories = this.getCategoriesFromLocalStorage();
-    categories.push(category);
-    this.saveCategoriesToLocalStorage(categories);
-    this.categoriesSubject.next(categories);
+  private saveCategoriesToLocalStorage() {
+    localStorage.setItem('categories', JSON.stringify(Array.from(this.categoriesMap.values())));
   }
 
-  removeCategory(categoryId: number): void {
-    const categories = this.getCategoriesFromLocalStorage().filter(category => category.id !== categoryId);
-    this.saveCategoriesToLocalStorage(categories);
-    this.categoriesSubject.next(categories);
+  addCategory(category: Category) {
+    this.categoriesMap.set(category.id, category);
+    this.saveCategoriesToLocalStorage();
+    this.categoriesSubject.next(Array.from(this.categoriesMap.values()));
+  }
+
+  removeCategory(categoryId: number) {
+    this.categoriesMap.delete(categoryId);
+    this.saveCategoriesToLocalStorage();
+    this.categoriesSubject.next(Array.from(this.categoriesMap.values()));
   }
 
   categoryExists(name: string): boolean {
-    const categories = this.getCategoriesFromLocalStorage();
-    return categories.some(category => category.name.toLowerCase() === name.toLowerCase());
+    return Array.from(this.categoriesMap.values()).some(category => category.name.toLowerCase() === name.toLowerCase());
+  }
+
+  getCategoryById(id: number): Category | undefined {
+    return this.categoriesMap.get(id);
   }
 }
 
@@ -39,4 +48,3 @@ export interface Category {
   id: number;
   name: string;
 }
-

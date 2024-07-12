@@ -1,3 +1,4 @@
 <h2>Todo Management</h2>
 <app-todo-form></app-todo-form>
-<app-todo-list></app-todo-list>
+<app-filter (filterChange)="onFilterChange($event)"></app-filter>
+<app-todo-list [todos]="filteredTodos"></app-todo-list>

@@ -1,42 +1,27 @@
-<div class="container mt-3">
-  <form [formGroup]="filterForm" class="mb-3">
-    <div class="form-group">
-      <label for="categoryFilter">Category</label>
-      <select id="categoryFilter" class="form-control" formControlName="category">
-        <option value="">All Categories</option>
-        <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
-      </select>
-    </div>
-    <div class="form-group mt-2">
-      <label for="searchFilter">Search</label>
-      <input id="searchFilter" type="text" class="form-control" formControlName="search" placeholder="Search Todos">
-    </div>
-  </form>
-  <form [formGroup]="todosForm" (ngSubmit)="saveChanges()">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Category</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody formArrayName="todos">
-        <tr *ngFor="let todoControl of todos.controls; let i = index" [formGroupName]="i">
-          <td>
-            <input type="text" class="form-control" formControlName="title">
-          </td>
-          <td>
-            <select class="form-control" formControlName="categoryId">
-              <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
-            </select>
-          </td>
-          <td>
-            <button type="button" class="btn btn-danger" (click)="removeTodoItem(i)">Remove</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <button type="submit" class="btn btn-primary" [disabled]="!todosForm.dirty">Save Changes</button>
-  </form>
-</div>
+<form [formGroup]="todosForm" (ngSubmit)="saveChanges()">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody formArrayName="todos">
+      <tr *ngFor="let todoControl of todosArray.controls; let i = index" [formGroupName]="i">
+        <td>
+          <input type="text" class="form-control" formControlName="title">
+        </td>
+        <td>
+          <select class="form-control" formControlName="categoryId">
+            <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+          </select>
+        </td>
+        <td>
+          <button type="button" class="btn btn-danger" (click)="removeTodoItem(i)">Remove</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <button type="submit" class="btn btn-primary" [disabled]="!todosForm.dirty">Save Changes</button>
+</form>

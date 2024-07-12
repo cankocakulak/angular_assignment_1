@@ -1,60 +1,52 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray } from '@angular/forms';
 import { TodoService, Todo } from '../todo.service';
 import { CategoryService, Category } from '../../category/category.service';
-import { combineLatest, Observable, of } from 'rxjs';
-import { debounceTime, map, startWith } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-todo-list',
   templateUrl: './todo-list.component.html',
   styleUrls: ['./todo-list.component.scss']
 })
-export class TodoListComponent implements OnInit {
-  todos$: Observable<Todo[]> = of([]); // Başlatma
+export class TodoListComponent implements OnInit, OnChanges, OnDestroy {
+  @Input() todos: Todo[] = [];
   categories: Category[] = [];
-  filterForm: FormGroup;
   todosForm: FormGroup;
   removedTodos: number[] = [];
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private todoService: TodoService,
     private categoryService: CategoryService
   ) {
-    this.filterForm = this.fb.group({
-      category: [''],
-      search: ['']
-    });
-
     this.todosForm = this.fb.group({
       todos: this.fb.array([])
     });
   }
 
   ngOnInit(): void {
-    this.categoryService.categories$.subscribe(categories => this.categories = categories);
+    this.categoryService.categories$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(categories => {
+        this.categories = categories;
+      });
 
-    const category$ = this.filterForm.get('category')!.valueChanges.pipe(startWith(''));
-    const search$ = this.filterForm.get('search')!.valueChanges.pipe(
-      startWith(''),
-      debounceTime(500)
-    );
-
-    this.todos$ = combineLatest([this.todoService.todos$, category$, search$]).pipe(
-      map(([todos, category, search]) => {
-        return todos.filter(todo => {
-          const matchesCategory = category ? todo.categoryId === +category : true;
-          const matchesSearch = search ? todo.title.toLowerCase().includes(search.toLowerCase()) : true;
-          return matchesCategory && matchesSearch;
-        });
-      })
-    );
-
-    this.todos$.subscribe(todos => this.setTodos(todos));
+    this.setTodos(this.todos);
   }
 
-  get todos(): FormArray {
+  ngOnChanges(): void {
+    this.setTodos(this.todos);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  get todosArray(): FormArray {
     return this.todosForm.get('todos') as FormArray;
   }
 
@@ -69,27 +61,25 @@ export class TodoListComponent implements OnInit {
   }
 
   getCategoryName(categoryId: number): string {
-    const category = this.categories.find(cat => cat.id === categoryId);
+    const category = this.categoryService.getCategoryById(categoryId);
     return category ? category.name : 'Unknown';
   }
 
   removeTodoItem(index: number): void {
-    const todoId = this.todos.at(index).value.id;
-    this.todos.removeAt(index);
-    this.todosForm.markAsDirty(); // Mark form as dirty when an item is removed
-    this.removedTodos.push(todoId); // Track removed todos locally
+    const todoId = this.todosArray.at(index).value.id;
+    this.todosArray.removeAt(index);
+    this.todosForm.markAsDirty();
+    this.removedTodos.push(todoId);
   }
 
   saveChanges(): void {
     if (this.todosForm.valid) {
       const updatedTodos: Todo[] = this.todosForm.value.todos;
-      
       // Filter out the removed todos from the updated list
       const finalTodos = updatedTodos.filter(todo => !this.removedTodos.includes(todo.id));
-      
       this.todoService.updateTodos(finalTodos);
-      this.todosForm.markAsPristine(); // Mark form as pristine after save
-      this.removedTodos = []; // Clear the list of removed todos after saving
+      this.todosForm.markAsPristine();
+      this.removedTodos = [];
     }
   }
 }
