@@ -5,39 +5,49 @@ import { BehaviorSubject, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class TodoService {
-  private todosSubject = new BehaviorSubject<Todo[]>(this.getTodosFromLocalStorage());
-  todos$: Observable<Todo[]> = this.todosSubject.asObservable();
+  private todosMap: Map<number, Todo>;
+  private todosSubject: BehaviorSubject<Todo[]>;
+  todos$: Observable<Todo[]>;
 
-  private getTodosFromLocalStorage(): Todo[] {
-    return JSON.parse(localStorage.getItem('todos') || '[]');
+  constructor() {
+    this.todosMap = this.getTodosFromLocalStorage();
+    this.todosSubject = new BehaviorSubject<Todo[]>(Array.from(this.todosMap.values()));
+    this.todos$ = this.todosSubject.asObservable();
   }
 
-  private saveTodosToLocalStorage(todos: Todo[]): void {
-    localStorage.setItem('todos', JSON.stringify(todos));
+  private getTodosFromLocalStorage(): Map<number, Todo> {
+    const todosArray = JSON.parse(localStorage.getItem('todos') || '[]');
+    return new Map(todosArray.map((todo: Todo) => [todo.id, todo]));
+  }
+
+  private saveTodosToLocalStorage(): void {
+    const todosArray = Array.from(this.todosMap.values());
+    localStorage.setItem('todos', JSON.stringify(todosArray));
   }
 
   addTodoItem(todo: Todo): void {
-    const todos = this.getTodosFromLocalStorage();
-    todos.push(todo);
-    this.saveTodosToLocalStorage(todos);
-    this.todosSubject.next(todos);
+    this.todosMap.set(todo.id, todo);
+    this.saveTodosToLocalStorage();
+    this.todosSubject.next(Array.from(this.todosMap.values()));
   }
 
   removeTodoItem(todoId: number): void {
-    const todos = this.getTodosFromLocalStorage().filter(todo => todo.id !== todoId);
-    this.saveTodosToLocalStorage(todos);
-    this.todosSubject.next(todos);
+    this.todosMap.delete(todoId);
+    this.saveTodosToLocalStorage();
+    this.todosSubject.next(Array.from(this.todosMap.values()));
   }
 
   updateTodoItem(updatedTodo: Todo): void {
-    const todos = this.getTodosFromLocalStorage().map(todo => todo.id === updatedTodo.id ? updatedTodo : todo);
-    this.saveTodosToLocalStorage(todos);
-    this.todosSubject.next(todos);
+    this.todosMap.set(updatedTodo.id, updatedTodo);
+    this.saveTodosToLocalStorage();
+    this.todosSubject.next(Array.from(this.todosMap.values()));
   }
 
   updateTodos(updatedTodos: Todo[]): void {
-    this.saveTodosToLocalStorage(updatedTodos);
-    this.todosSubject.next(updatedTodos);
+    this.todosMap.clear();
+    updatedTodos.forEach(todo => this.todosMap.set(todo.id, todo));
+    this.saveTodosToLocalStorage();
+    this.todosSubject.next(Array.from(this.todosMap.values()));
   }
 }
 
